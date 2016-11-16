@@ -1,0 +1,4 @@
+[11-May-2016 09:12:56 UTC] PHP Fatal error:  Call to undefined function get_header() in /home/dvthegrio/public_html/wp-content/themes/nbcthegrio-mobile/index.php on line 1
+[01-Jun-2016 09:40:24 UTC] PHP Fatal error:  Call to undefined function get_header() in /home/dvthegrio/public_html/wp-content/themes/nbcthegrio-mobile/index.php on line 1
+[09-Jul-2016 19:44:18 UTC] PHP Fatal error:  Call to undefined function get_header() in /home/dvthegrio/public_html/wp-content/themes/nbcthegrio-mobile/index.php on line 1
+[10-Jul-2016 05:01:12 UTC] PHP Fatal error:  Call to undefined function get_header() in /home/dvthegrio/public_html/wp-content/themes/nbcthegrio-mobile/index.php on line 1

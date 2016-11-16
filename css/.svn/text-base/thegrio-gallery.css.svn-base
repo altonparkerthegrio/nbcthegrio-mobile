@@ -1,0 +1,42 @@
+.thegrio-gallery {
+	background: transparent center center;
+	margin-bottom: 3em;
+	position: relative;
+}
+
+.thegrio-gallery .cycle-wrapper { visibility: hidden; }
+
+.thegrio-gallery .thegrio-gallery-pager {
+	position: absolute;
+	z-index: 100;
+	width: 100%;
+	top: 40%;
+}
+.thegrio-gallery .thegrio-gallery-pager a.previous,
+.thegrio-gallery .thegrio-gallery-pager a.next {
+	cursor: pointer;
+	display: block;
+	height: 80px;
+	text-indent: -9999px;
+	width: 38px;
+}
+.thegrio-gallery .thegrio-gallery-pager a.previous {
+	background: transparent url('../images/paddle_prev.png') no-repeat left top;
+	float: left;
+}
+.thegrio-gallery .thegrio-gallery-pager a.next {
+	background: transparent url('../images/paddle_next.png') no-repeat left top;
+	float: right;
+}
+.thegrio-gallery .cycle-wrapper {
+	font-weight: bold;
+	text-align: center;
+}
+
+.thegrio-gallery .caption {
+	text-align: left;
+	font-weight: bold;
+	margin: 0 45px;
+}
+
+.thegrio-gallery .count	{ text-align: center; }

@@ -1,0 +1,161 @@
+#fb_content_3
+{
+	margin-bottom: 8px !important;
+	margin-top: 0px !important;
+}
+
+#fb_content_3 .pw-button-facebook { background-position: 0px 348px !important; }
+#fb_content_3 .pw-button-twitter { background-position: 0px 175px !important; }
+#fb_content_3 .pw-button-email { background-position: 0px 218px !important; }
+
+#fb_content_3 .pw-icon,
+#fb_content_3 .comments_pw_icon,#fb_content_3 .pw-button-facebook, #fb_content_3 .pw-button-twitter, #fb_content_3 .pw-button-email
+{
+	background: url(../images/dd-icons_tg.png);
+	cursor: pointer;
+	width: 85px!important;
+	height: 42px !important;
+	display: inline-block;
+}
+
+#fb_content_3 .pw-button { display: inline-block; }
+#fb_content_3 .pw-button-email .pw-icon { background-position: 0 0 !important; }
+#fb_content_3 .pw-button-twitter .pw-icon { background-position: 0 -44px !important; }
+#fb_content_3 .pw-button-facebook .pw-icon { background-position: 0 -88px !important; }
+#fb_content_3 .comments_pw_icon { background-position: 0 -132px !important; }
+#fb_content_3 .pw-button-whatsapp .pw-icon { background-position: 0 -176px !important; }
+
+#fb_content_3 .pw-box-counter,
+#fb_content_3 .fb_comments_count
+{
+	font-size: 10px !important;
+	z-index: 0;
+	color: rgb(255, 255, 255);
+	position: absolute;
+	margin-left: 55px !important;
+	margin-top: 16px !important;
+}
+
+#fb_content_3 .fb_comments_count
+{
+	margin-top: 20px!important;
+	margin-left: 15px !important;
+	font-weight: bold!important;
+}
+
+#fb_content_3 .comments_pw
+{
+	vertical-align: top;
+	margin-right: 3px;
+	margin-bottom: 3px;
+}
+
+#fb_content_3 .pw-widget { padding: 0; }
+
+.addthis_toolbox .custom_images a
+{
+	display: inline-block!important;
+	width: 80px;
+	height: 43px!important;
+	background: url(../images/dd-icons_tg.png) no-repeat;
+}
+
+.custom_images .pw-button-facebook
+{
+	background-position: 0px -87px !important;
+	width: 40px!important;
+}
+
+.custom_images .pw-button-twitter
+{
+	background-position: 0px -43px !important;
+	width: 40px!important;
+}
+
+.custom_images .pw-button-email
+{
+	background: url(../images/dd-icons_tg.png) no-repeat!important;
+	background-position: 0px 1px!important;
+	width: 40px!important;
+}
+
+.addthis_toolbox a { margin-bottom: -30px!important; }
+
+.comments_pw_icon span
+{
+	display: block;
+	margin: 7px 0;
+	height: 30px;
+	width: 30px;
+	float: right;
+	text-align: center;
+	font-size: 10px;
+}
+
+.custom_images .comments_pw_icon
+{
+	background-position: 0px -131px!important;
+	color: #ffffff!important;
+}
+
+@media only screen and(max-width: 500px)
+{
+	#fb_content_3 .pw-button,
+	    #fb_content_3 .comments_pw
+	{
+		width: 75px;
+		height: 50px !important;
+		margin: 0 !important;
+		display: inline-block;
+		text-align: center;
+	}
+
+	#fb_content_3 .pw-icon,
+	    #fb_content_3 .comments_pw_icon
+	{
+		width: 42px !important;
+		margin-top: 6px;
+	}
+
+	#fb_content_3 .pw-button-facebook { background: #367DC4 !important; }
+	#fb_content_3 .pw-button-twitter { background: #5CCAE4 !important; }
+	#fb_content_3 .pw-button-email { background: #C7C6CB !important; }
+	#fb_content_3 .comments_pw { background: #802987 !important; }
+	#fb_content_3 .pw-button-whatsapp { background: #47A606 !important; }
+	#fb_content_3 .pw-box-counter { display: none !important; }
+	#fb_content_3 .fb_comments_count { display: none; }
+}
+
+#social-container { height: auto !important; }
+#fb_content_24 .customPostWrapper .pw-icon { display: none!important; }
+
+#fb_content_24 .customPostWrapper .pw-button
+{
+	font: normal 14px/20px arial, sans-serif !important;
+	display: inline !important;
+}
+
+#fb_content_24 .btn_fb { background: #405e9f; }
+#fb_content_24 .btn_twitter { background: #0fc1f2; }
+
+#fb_content_24 .btn_share
+{
+	padding-top: 6px;
+	padding-bottom: 6px;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding: 15px;
+	cursor: pointer;
+	border-radius: 3px;
+	font-size: 16px;
+	color: #ffffff;
+	font-family: 'Helvetica Neue', Arial, Helvetica, Geneva, sans-serif;
+	text-align: center;
+	-webkit-appearance: none;
+	border: 0px;
+}
+
+#twitter_btn { width: 50%; }
+#spacer_btn { width: 10px; }
+#fb_content_24 { text-align: center; }
+#infinite-footer {display:none;}

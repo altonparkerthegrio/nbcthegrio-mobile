@@ -1,0 +1,464 @@
+/**
+ * jQuery-based swipe left and right with preloading
+ */
+var insertSlides;
+
+(function($) {
+	var SUPPORTS_TOUCH = 'ontouchstart' in window;
+
+	var 
+		START_EV = SUPPORTS_TOUCH ? 'touchstart' : 'mousedown',
+		MOVE_EV = SUPPORTS_TOUCH ? 'touchmove' : 'mousemove',
+		END_EV = SUPPORTS_TOUCH ? 'touchend' : 'mouseup',
+		CANCEL_EV = 'touchcancel';
+
+	var H = window.History;
+
+	var startX, lastX, endX, startY, endY;
+	var startTime;
+	var domIndex = 1;
+	var limit = 9;
+	var currentURL = location.href;
+	var XHR;
+	var slideChange = 0;
+
+	$(function() {
+		var $slider = $('#content-slider');
+
+		// Don't do anything without a slider
+		if($slider.length == 0)
+			return;
+
+		var $content = $('#content');
+		var contentPadding = parseInt($content.css('padding-left')) + parseInt($content.css('padding-right'));
+		var page = 0, previousPage = 0;
+
+		$content.attr('data-url', post_permalink);
+		$content.attr('data-title', document.title);
+		$content.addClass('content-slide');
+
+		var insertSlide = function(where, index) {
+			var url = post_preloadQueue[index];
+			if($('.content-slide[data-url="' + url + '"]').length)
+				return;
+
+			// Fgure out correct slide widths
+			var ow = $(window).width();
+			var w = $content.width();
+
+			// Sanity check on 'where', since it's being used as a function property
+			// on a jQuery object
+			var left;
+
+			if(where == 'before') 
+				left = (page - 1) * ow;
+			else if(where == 'after')
+				left = (page + 1) * ow;
+			else
+				return;
+
+			var $slide = $('<div class="content content-slide" />');
+			$slide.attr('data-url', url);
+
+			if(url == "start") {
+				$slide.html( '<p class="no-more no-earlier">No earlier posts</p>' );
+			}
+			else if(url == "end") {
+				$slide.html( '<p class="no-more no-later">No later posts</p>' );
+			}
+			else {
+				$slide.attr('data-title', post_preload[url]['title']);
+				$slide.append(post_preload[url]['wrapper']);
+			}	
+
+			$slide.css({ position: 'absolute', left: left, width: w });
+			$content[where]($slide);
+		}
+
+		// Insert slides to either side of the current page
+		var insertSlides = function() { 
+			var post_index = -1;
+
+			for(var i = 0; i < post_preloadQueue.length; i++)
+				if(post_preloadQueue[i] == $content.data('url'))
+					post_index = i;
+
+			if(post_index > 0)
+				insertSlide('before', post_index - 1);
+			if(post_index > -1 && post_index < post_preloadQueue.length - 1)
+				insertSlide('after', post_index + 1);
+		}
+		insertSlides();
+
+		var adSwitchTimer = null;
+		var switchAds = function() {
+			clearTimeout(adSwitchTimer);
+
+			adSwitchTimer = setTimeout(function() {
+				$('iframe.ad-target').each(function( index ) {
+					var $ad = $(this);
+					if($ad.data('loading'))
+						return;
+					$ad.data('loading',true);
+					$ad.attr('src', $ad.attr('src'))
+					$ad.height(0);
+				});
+			}, 1000);
+		}
+
+		var slider = $slider[0];
+		var startLeft;
+		var slidePending = false, sliding = false, slideCancel = false;
+
+		var preloadPosts = function(url, direction) {
+			// Preload additional posts centered around url in the given direction 
+			// direction = 'older' | 'newer'
+			if(XHR)
+				XHR.abort();
+
+			XHR = $.post( ajaxurl, {
+				action: 'posts_preload',
+				ajax_action: 'posts_preload',
+				url: url,
+				direction: direction,
+				category: post_category
+			}, function(data) {
+				XHR = null;
+
+				if(data.preload && data.queue) {
+					for(var i = 0; i < data.queue.length; i++) {
+						if(post_preload[data.queue[i]]) continue;
+
+						if(direction == "older")
+							post_preloadQueue.push(data.queue[i]);
+						if(direction == "newer") 
+							post_preloadQueue.unshift(data.queue[i]);
+
+						post_preload[data.queue[i]] = data.preload[data.queue[i]];
+					}
+
+					if(post_preloadQueue.length > limit) {
+						if(direction == "older") {
+							for(var i = 0; i < post_preloadQueue.length - limit; i++) 
+								delete(post_preload[post_preloadQueue.shift()]);	
+						}
+						else if(direction == "newer") {
+							for(var i = post_preloadQueue.length - 1; i > limit; i--) 
+								delete(post_preload[post_preloadQueue.pop()]);
+						}
+					}
+					insertSlides();
+				}
+			});
+		}
+
+		var slideToPage = function() {
+			// Figure out the current slide's index in the slide
+			// list. If it's 0 or the limit, then we've reached the
+			// end and there's no more content. indicate this by snapping back.
+			domIndex = $('.content-slide').index($content);
+			
+			// Don't let the user scroll past the end. 
+			if((page < previousPage && domIndex == 0) || 
+				 (page > previousPage && domIndex == $('.content-slide').length - 1) || 
+				 (page < previousPage && domIndex > 0 && $('.content-slide').eq(domIndex-1).data('url') == "start") ||
+				 (page > previousPage && domIndex < $('.content-slide').length - 2 && $('.content-slide').eq(domIndex+1).data('url') == "end"))
+				page = previousPage;
+
+			$slider.animate({ left: -page * $(window).width() }, 100, function() { 
+
+				if( previousPage != page ) {
+
+					$('.content-slide .load-sharing .share').remove();
+					$('.content-slide .sharing-loaded').removeClass('sharing-loaded'); 
+					$('.content-slide .comments-loaded').removeClass('comments-loaded'); 
+					$('.content-slide .facebook-comments').html('');
+					$('#fb-root').remove();
+					
+					var w = $content.width();
+
+					if( page < previousPage ) {
+						domIndex--;
+
+						$content = $('.content-slide').eq(domIndex);
+
+						// Insert the next slide to the left if necessary:
+
+						// First figure out the index in the preload queue
+						var preloadIndex = -1, preloadUrl = '';
+						for( var i = 0; i < post_preloadQueue.length; i++ )
+							if( post_preloadQueue[i] == $content.data('url') )
+								preloadIndex = i - 1;
+
+						// If there is an index and the slide for that URL doesn't exist, insert it
+						if( preloadIndex > -1 )
+							insertSlide('before', preloadIndex);
+
+						if( preloadIndex == 0 )
+							preloadPosts( $content.data('url'), 'newer' );
+
+						// Clear out any extra slides
+						if( $('.content-slide').length > limit ) {
+							for( var i = 0; i < $('.content-slide').length - limit; i++ )
+								$('.content-slide').eq(limit - 1).remove();
+						}
+					}
+					if( page > previousPage ) {
+						domIndex++;
+
+						$content = $('.content-slide').eq(domIndex);
+					
+						// Insert the next slide to the left if necessary
+						var preloadIndex = -1, preloadUrl = '';
+						for( var i = 0; i < post_preloadQueue.length; i++ )
+							if( post_preloadQueue[i] == $content.data('url') )
+								preloadIndex = i + 1;
+
+						if( preloadIndex > 0 && preloadIndex < post_preloadQueue.length ) 
+							insertSlide('after', preloadIndex);
+
+						if( preloadIndex == post_preloadQueue.length - 1 )
+							preloadPosts( $content.data('url'), 'older' );
+
+						// Clear out extra slides
+						if( $('.content-slide').length > limit ) {
+							for( var i = 0; i < $('.content-slide').length - limit; i++ )
+								$('.content-slide').eq(0).remove();
+						}
+					}
+
+					var ww = $(window).width();
+
+					$content.width(ww - contentPadding);
+					document.title = $('<div/>').html($content.data('title')).text();	
+					currentURL = $content.data('url');
+					H.pushState($content.data('url'), "", $content.data('url'));
+
+					slideChange++;
+					
+					if(slideChange % 2 == 0) switchAds();
+					$('html, body').animate({scrollTop: 50}, 600);
+				}
+
+				$content.css({ position: 'relative' }).siblings().css({ position: 'absolute' });
+			});
+		}
+
+		var stateChange = function(ev) {
+			if(location.href == currentURL) return;
+
+			var $slide = $('.content-slide[data-url="' + location.href + '"]');
+
+			previousPage = page;
+
+			// Assume we can only go back or forth one slide. Not the greatest assumption,
+			// but it helps to simplify the code. Possibly breakable if the user
+			// rapidly smacks the back button
+			if($('.content-slide').index($slide) < $('.content-slide').index($content))
+				page--;
+			else if($('.content-slide').index($slide) > $('.content-slide').index($content))
+				page++;
+
+			slideToPage();
+		}
+		H.Adapter.bind(window, 'statechange', stateChange);
+
+		$('#content-container').on( START_EV, function(event) {
+			//As we use Jquery bind for events, we need to target the original event object
+			event = event.originalEvent;
+			var touch = SUPPORTS_TOUCH ? event.touches[0] : event; 
+
+			slidePending = true;
+			slideCancel = false;
+
+			startX = endX = touch.pageX;
+			startY = endY = touch.pageY;
+			startLeft = $slider.position().left;
+			startTime = new Date().getTime();
+
+			if(!SUPPORTS_TOUCH) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+		});
+		
+		$('#content-container')[0].addEventListener( MOVE_EV, function(event) {
+			//As we use Jquery bind for events, we need to target the original event object
+			var touch = SUPPORTS_TOUCH ? event.touches[0] : event; 
+
+			endX = touch.pageX;
+			endY = touch.pageY;
+
+			if(!sliding && Math.abs(startY - endY) > 20)
+				slideCancel = true;
+
+			if(slideCancel)
+				return;
+
+			if(slidePending && Math.abs(startX - endX) >= 20)
+				sliding = true;
+
+			if(!sliding) return;
+
+			event.preventDefault();
+
+			lastX = endX;
+
+			if(Math.abs(startX - endX) > 20)
+				slider.style.left = (startLeft - (startX - endX)) + "px"
+			else
+				slider.style.left = startLeft + "px";
+		});
+	
+		var moveEnd = function(event) {
+			slidePending = false;
+
+			if(!sliding) 
+				return;
+
+			sliding = false;
+
+			//As we use Jquery bind for events, we need to target the original event object
+			event = event.originalEvent;
+			var touch = SUPPORTS_TOUCH ? event.touches[0] : event; 
+
+			event.preventDefault();
+			event.stopPropagation();
+
+			if(!SUPPORTS_TOUCH)
+				endX = touch.pageX;
+
+			var endTime = new Date().getTime();
+			previousPage = page;
+
+			if(endTime - startTime < 250) {
+				if(startX - endX < -60) 
+					page--;
+				else if(startX - endX > 60) 
+					page++;
+			}
+			else if(startX - endX < -160) 
+				page--;
+			else if(startX - endX > 160)
+				page++;
+
+			slideToPage();
+		}
+
+		$(document).on( END_EV, moveEnd );
+		if(!SUPPORTS_TOUCH)
+			$(document).on( "mouseout", moveEnd );
+		else
+			$(document).on( CANCEL_EV, moveEnd );
+
+
+		var rearrange = function() {
+			if(!$content) return;
+
+			var index = 0;
+			var ww = $(window).width();
+
+			page = previousPage = domIndex;
+
+			$('.content-slide').each(function() {
+				$(this).width(ww - contentPadding);
+				$(this).css('left', ww * index++);
+			});
+			$slider.css('left', -domIndex * ww);
+		}
+		$(window).on('resize',rearrange);
+		$(window).bind('orientationchange', rearrange);
+
+		rearrange();
+	});
+
+	$(document).load(function(ev) {
+		// Delete any existing addthis globals
+		window._atc = {};
+		window.addthis = false;
+
+		$(this).parents('.load-sharing').addClass('sharing-loaded');
+
+		var template = $('#addthis-template').text();
+		template = template.replace('__URL__', window.location.href);
+		template = template.replace('__TITLE__', document.title);
+		$(this).siblings('.sharing-container').html(template);
+		$.getScript(addthis_script);
+	});
+
+	$(document).load(function(ev) {
+		if($(this).parents('.load-comments').hasClass('comments-loaded')) 
+			return;
+
+		FB = null;
+		$('#facebook-jssdk').remove();
+		initFacebook();
+		var template = $('#fb-comment-template').text();
+		template = template.replace('__URL__', window.location.href);
+		template = template.replace('__TITLE__', document.title);
+		$(this).parents('.content-slide').find('.facebook-comments').html(template);
+		$(this).parents('.content-slide').find('.comments-bottom').addClass('comments-loaded');
+	});
+
+	$(document).on( "click", ".load-comments a", function(ev) {
+		window.scroll(0, $(this).parents('.content-slide').find('.facebook-comments').position().top);
+	});
+})(jQuery);
+
+/*
+	$(document).on( "click", ".load-comments a", function(ev) {
+		if($(this).parents('.load-comments').hasClass('comments-loaded')) 
+			return;
+
+		FB = null;
+		$('#facebook-jssdk').remove();
+		initFacebook();
+		var template = $('#fb-comment-template').text();
+		template = template.replace('__URL__', window.location.href);
+		template = template.replace('__TITLE__', document.title);
+		$(this).parents('.content-slide').find('.facebook-comments').html(template);
+		$(this).parents('.content-slide').find('.comments-bottom').addClass('comments-loaded');
+
+		window.scroll(0, $(this).parents('.content-slide').find('.facebook-comments').position().top);
+	});
+})(jQuery);
+
+jQuery( document ).ready( function( $ ) {
+	// Adjacent post swiping on single posts
+	$( '.thegrio-singular .content' ).touchwipe( {
+		wipeLeft: function() {
+			if ( thegrio_adjacent_posts.next != '' )
+				window.location = thegrio_adjacent_posts.next;
+		},
+		wipeRight: function() {
+			if ( thegrio_adjacent_posts.previous != '' )
+				window.location = thegrio_adjacent_posts.previous;
+		},
+		min_move_x: 20,
+		min_move_y: 20,
+		preventDefaultEvents: false
+	} );
+} );
+*/
+
+
+// Google's Bookmark Bubble - see http://code.google.com/p/mobile-bookmark-bubble/
+/*window.addEventListener('load', function() {
+	window.setTimeout(function() {
+		var bubble = new google.bookmarkbubble.Bubble();
+
+		var parameter = 'bmb=1';
+
+		bubble.hasHashParameter = function() {
+			return window.location.hash.indexOf(parameter) != -1;
+		};
+
+		bubble.setHashParameter = function() {
+			if (!this.hasHashParameter()) {
+				window.location.hash += parameter;
+			}
+		};
+
+		bubble.showIfAllowed();
+	}, 1000);
+}, false); */
